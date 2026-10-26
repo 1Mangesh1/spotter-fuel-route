@@ -1,0 +1,27 @@
+[project]
+name = "spotter-fuel-route"
+version = "0.1.0"
+description = "Route planner API that picks the cheapest fuel stops for a truck trip across the USA"
+readme = "README.md"
+authors = [
+    { name = "Mangesh Bide", email = "mangeshbide123@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "django==6.1.2",
+    "djangorestframework==3.18.3",
+    "drf-spectacular==0.30.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff==0.17.2",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["planner/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "DJ"]
