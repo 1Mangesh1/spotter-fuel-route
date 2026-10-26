@@ -53,12 +53,18 @@ class Command(BaseCommand):
                 key = (place_key(name), row["USPS"])
                 # Two places can share a name in one state. Keep the larger one.
                 if key not in best or land_area > best[key][0]:
-                    best[key] = (land_area, {"name": name, "state": row["USPS"],
-                                             "lat": row["INTPTLAT"], "lon": row["INTPTLONG"].strip()})
+                    lat, lon = row["INTPTLAT"], row["INTPTLONG"].strip()
+                    best[key] = (
+                        land_area,
+                        {"name": name, "state": row["USPS"], "lat": lat, "lon": lon},
+                    )
 
         PLACES_CSV.parent.mkdir(parents=True, exist_ok=True)
         with PLACES_CSV.open("w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=["name", "state", "lat", "lon"])
             writer.writeheader()
-            writer.writerows(row for _, row in sorted(best.values(), key=lambda v: (v[1]["state"], v[1]["name"])))
+            places = sorted(
+                (row for _, row in best.values()), key=lambda r: (r["state"], r["name"])
+            )
+            writer.writerows(places)
         self.stdout.write(self.style.SUCCESS(f"Wrote {len(best)} places to {PLACES_CSV}"))

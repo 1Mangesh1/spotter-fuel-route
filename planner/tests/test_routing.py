@@ -13,7 +13,10 @@ DENVER = (39.762, -104.876)
 
 
 def osrm_body(coordinates, duration_s=7200.0):
-    body = {"code": "Ok", "routes": [{"duration": duration_s, "geometry": {"coordinates": coordinates}}]}
+    body = {
+        "code": "Ok",
+        "routes": [{"duration": duration_s, "geometry": {"coordinates": coordinates}}],
+    }
     return io.BytesIO(json.dumps(body).encode())
 
 

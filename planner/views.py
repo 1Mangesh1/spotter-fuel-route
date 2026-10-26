@@ -1,4 +1,4 @@
-from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -22,11 +22,6 @@ class RoutePlanView(APIView):
             ),
             502: OpenApiResponse(ErrorSerializer, description="The routing service failed."),
         },
-        examples=[
-            OpenApiExample(
-                "Chicago to Denver", value={"start": "Chicago, IL", "finish": "Denver, CO"}
-            ),
-        ],
     )
     def get(self, request: Request) -> Response:
         query = TripQuerySerializer(data=request.query_params)

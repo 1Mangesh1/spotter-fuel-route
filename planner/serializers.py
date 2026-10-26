@@ -20,8 +20,12 @@ class RoundedFloatField(serializers.FloatField):
 
 
 class TripQuerySerializer(serializers.Serializer):
-    start = serializers.CharField(help_text='"City, ST", "City, State" or "lat,lon" in the USA.')
-    finish = serializers.CharField(help_text='"City, ST", "City, State" or "lat,lon" in the USA.')
+    start = serializers.CharField(
+        help_text='A US place: "Chicago, IL", "Chicago, Illinois" or "41.88,-87.63".'
+    )
+    finish = serializers.CharField(
+        help_text='A US place: "Denver, CO", "Denver, Colorado" or "39.74,-104.99".'
+    )
     start_tank = serializers.ChoiceField(
         choices=[t.value for t in StartTank],
         default=StartTank.EMPTY.value,
@@ -84,7 +88,9 @@ class TripPlanSerializer(serializers.Serializer):
         """The route as a GeoJSON LineString ([lon, lat] pairs)."""
         route = plan.route
         indices = sample_indices(route.cum_miles, _GEOMETRY_SPACING_MILES)
-        coordinates = [[round(route.points[i][1], 5), round(route.points[i][0], 5)] for i in indices]
+        coordinates = [
+            [round(lon, 5), round(lat, 5)] for lat, lon in (route.points[i] for i in indices)
+        ]
         return {"type": "LineString", "coordinates": coordinates}
 
     def get_map_url(self, plan) -> str:

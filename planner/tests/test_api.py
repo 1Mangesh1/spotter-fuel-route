@@ -16,14 +16,23 @@ START, FINISH = "30.0,-100.0", "34.0,-100.0"
 def meridian_route(*args, **kwargs):
     """A straight 4-degree road north along longitude -100: 276.37 miles."""
     coordinates = [[-100.0, 30.0 + i / 100] for i in range(401)]
-    body = {"code": "Ok", "routes": [{"duration": 18000.0, "geometry": {"coordinates": coordinates}}]}
+    body = {
+        "code": "Ok",
+        "routes": [{"duration": 18000.0, "geometry": {"coordinates": coordinates}}],
+    }
     return io.BytesIO(json.dumps(body).encode())
 
 
 def add_station(opis_id, name, lat, lon, price):
     FuelStation.objects.create(
-        opis_id=opis_id, name=name, address="I-27, EXIT 1", city="Town", state="TX",
-        price=price, lat=lat, lon=lon,
+        opis_id=opis_id,
+        name=name,
+        address="I-27, EXIT 1",
+        city="Town",
+        state="TX",
+        price=price,
+        lat=lat,
+        lon=lon,
     )
 
 

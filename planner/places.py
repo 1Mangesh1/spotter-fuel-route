@@ -67,7 +67,11 @@ def state_code(text: str) -> str | None:
 def _places() -> dict[tuple[str, str], tuple[str, float, float]]:
     with PLACES_CSV.open(newline="", encoding="utf-8") as f:
         return {
-            (place_key(row["name"]), row["state"]): (row["name"], float(row["lat"]), float(row["lon"]))
+            (place_key(row["name"]), row["state"]): (
+                row["name"],
+                float(row["lat"]),
+                float(row["lon"]),
+            )
             for row in csv.DictReader(f)
         }
 
@@ -95,7 +99,7 @@ def resolve_location(text: str) -> Location:
 
     city, comma, state = text.rpartition(",")
     if not comma or not city.strip():
-        raise LocationError(f'Use "City, ST" or "lat,lon", for example "Chicago, IL". Got "{text}".')
+        raise LocationError(f'Use "City, ST" or "lat,lon", like "Chicago, IL". Got "{text}".')
     code = state_code(state)
     if code is None:
         raise LocationError(f'"{state.strip()}" is not a US state.')

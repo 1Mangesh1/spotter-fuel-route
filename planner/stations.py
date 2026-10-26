@@ -66,5 +66,7 @@ class StationIndex:
 @cache
 def get_station_index() -> StationIndex:
     """Load every station once per process. The import command clears this cache."""
-    rows = FuelStation.objects.values("id", "name", "address", "city", "state", "price", "lat", "lon")
+    rows = FuelStation.objects.values(
+        "id", "name", "address", "city", "state", "price", "lat", "lon"
+    )
     return StationIndex(Station(**{**row, "price": float(row["price"])}) for row in rows)
