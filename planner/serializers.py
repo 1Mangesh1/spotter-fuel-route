@@ -3,7 +3,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from planner.geo import sample_indices
-from planner.optimizer import StartTank
+from planner.optimizer import BALANCED_STOP_COST, StartTank, Strategy
 from planner.places import LocationError, resolve_location
 
 # About two points per mile is enough to draw the route and keeps the response small.
@@ -36,6 +36,17 @@ class TripQuerySerializer(serializers.Serializer):
         ),
     )
 
+    strategy = serializers.ChoiceField(
+        choices=[s.value for s in Strategy],
+        default=Strategy.CHEAPEST.value,
+        help_text=(
+            "cheapest: the lowest fuel cost, which can mean several small top-ups. "
+            f"balanced: counts each stop as ${BALANCED_STOP_COST:g} of driver time, so it makes "
+            "far fewer stops for a little more fuel cost. fewest_stops: the minimum number of "
+            "stops, and the cheapest plan among those."
+        ),
+    )
+
     def _location(self, value: str):
         try:
             return resolve_location(value)
@@ -50,6 +61,9 @@ class TripQuerySerializer(serializers.Serializer):
 
     def validate_start_tank(self, value):
         return StartTank(value)
+
+    def validate_strategy(self, value):
+        return Strategy(value)
 
 
 class LocationSerializer(serializers.Serializer):
@@ -75,6 +89,8 @@ class TripPlanSerializer(serializers.Serializer):
     start = LocationSerializer()
     finish = LocationSerializer()
     start_tank = serializers.CharField()
+    strategy = serializers.CharField()
+    stop_count = serializers.IntegerField(source="fuel.stop_count")
     distance_miles = RoundedFloatField(1, source="route.distance_miles")
     duration_hours = RoundedFloatField(2, source="route.duration_hours")
     fuel_stops = FuelStopSerializer(source="fuel.purchases", many=True)

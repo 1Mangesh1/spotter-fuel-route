@@ -50,6 +50,8 @@ class RoutePlanApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["start_tank"], "empty")
+        self.assertEqual(data["strategy"], "cheapest")
+        self.assertEqual(data["stop_count"], 2)
         self.assertEqual(data["distance_miles"], 276.4)
         self.assertEqual(data["duration_hours"], 5.0)
         self.assertEqual([s["name"] for s in data["fuel_stops"]], ["Start Stop", "Cheap Stop"])
@@ -67,6 +69,27 @@ class RoutePlanApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["fuel_stops"], [])
         self.assertEqual(response.json()["total_fuel_cost"], 0)
+
+    def test_fewest_stops_fills_once_at_the_start(self, urlopen):
+        response = self.client.get(
+            URL, {"start": START, "finish": FINISH, "strategy": "fewest_stops"}
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["strategy"], "fewest_stops")
+        self.assertEqual(data["stop_count"], 1)
+        self.assertEqual([s["name"] for s in data["fuel_stops"]], ["Start Stop"])
+        self.assertEqual(data["total_fuel_cost"], 110.55)
+
+    def test_balanced_keeps_the_cheap_second_stop(self, urlopen):
+        response = self.client.get(URL, {"start": START, "finish": FINISH, "strategy": "balanced"})
+        self.assertEqual(response.json()["stop_count"], 2)
+        self.assertEqual(response.json()["total_fuel_cost"], 96.73)
+
+    def test_unknown_strategy_is_a_bad_request(self, urlopen):
+        response = self.client.get(URL, {"start": START, "finish": FINISH, "strategy": "fastest"})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("strategy", response.json())
 
     def test_unknown_place_is_a_bad_request(self, urlopen):
         response = self.client.get(URL, {"start": "Atlantis, IL", "finish": FINISH})

@@ -56,6 +56,10 @@ class FuelPlan[T]:
     def total_cost(self) -> float:
         return sum(p.cost for p in self.purchases)
 
+    @property
+    def stop_count(self) -> int:
+        return len(self.purchases)
+
 
 def plan_fuel[T](
     candidates: Iterable[Candidate[T]],
