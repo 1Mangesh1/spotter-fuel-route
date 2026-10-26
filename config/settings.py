@@ -81,6 +81,9 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+# The map tiles from tile.openstreetmap.org need a Referer header. Django defaults to
+# "same-origin", which drops it, so send the origin to other sites, as browsers do by default.
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {

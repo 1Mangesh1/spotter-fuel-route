@@ -86,7 +86,8 @@ Example: `GET /api/route/?start=Chicago, IL&finish=Denver, CO&strategy=balanced`
 1. **Places, with no API call.** `planner/places.py` reads `planner/data/us_places.csv`, which holds about 46,000 US places from the Census Gazetteer files. The lookup takes "City, ST" or "City, State", and it uses a lat,lon pair as given.
 2. **One routing call.** `planner/routing.py` asks the public [OSRM](https://project-osrm.org/) server for the route as GeoJSON. Each server process caches the route in memory for 24 hours.
 3. **Stations near the route.** The price list has no coordinates. `import_stations` places each station at the Census point of its city and stores it in SQLite. At request time, `planner/stations.py` keeps the stations within 10 miles of the route. A grid of 0.5-degree cells means that each route point checks only the stations near it.
-4. **The fuel plan.** `planner/optimizer.py` holds all three strategies.
+4. **The map.** The test page draws the route with Leaflet on OpenStreetMap tiles. OpenStreetMap refuses tile requests without a Referer header, so the site sends its origin to other sites (`Referrer-Policy: strict-origin-when-cross-origin`).
+5. **The fuel plan.** `planner/optimizer.py` holds all three strategies.
    - `cheapest` is a greedy rule that is exact for a single route. At each station, the truck buys just enough fuel to reach the next cheaper station in range. If no station in range is cheaper, it fills the tank and drives to the cheapest station in range.
    - `balanced` and `fewest_stops` first choose the stations to stop at, with a shortest-path search over the stations in route order. The greedy rule then sets the amount to buy at each chosen station. If the exact cheapest plan does at least as well on the strategy's own measure, the API returns that plan instead.
 

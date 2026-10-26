@@ -220,8 +220,10 @@
     const form = document.getElementById("trip");
     const statusLine = document.getElementById("status");
     const map = L.map("map").setView([39.5, -98.35], 4);
+    // tile.openstreetmap.org refuses tile requests that carry no Referer header.
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18,
+      maxZoom: 19,
+      referrerPolicy: "strict-origin-when-cross-origin",
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
     const layers = L.layerGroup().addTo(map);
