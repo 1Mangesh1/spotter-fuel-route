@@ -98,6 +98,10 @@ SPECTACULAR_SETTINGS = {
     ),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    # Pinned: "latest" moved to ReDoc 3, which this drf-spectacular page cannot start.
+    "REDOC_DIST": "https://cdn.jsdelivr.net/npm/redoc@2.5.4",
+    "SWAGGER_UI_DIST": "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.33.1",
+    "SWAGGER_UI_FAVICON_HREF": "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.33.1/favicon-32x32.png",
 }
 
 # Public OSRM demo server. It needs no API key. Point this at your own OSRM for production use.

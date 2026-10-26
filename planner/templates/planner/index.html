@@ -74,6 +74,7 @@
       outline: 2px solid var(--sign); outline-offset: 2px;
     }
     .hint { font-weight: 400; color: var(--ink-soft); font-size: 0.8rem; }
+    aside a { color: var(--sign); text-underline-offset: 3px; }
     button[type=submit] {
       padding: 0.65rem; border: 0; border-radius: var(--radius); cursor: pointer;
       background: var(--asphalt); color: var(--paper);
@@ -205,7 +206,7 @@
         <ol class="stops" id="stops"></ol>
         <details>
           <summary>Raw API response</summary>
-          <p class="hint"><a id="api-link" href="#">Open this request</a> in a new tab.</p>
+          <p class="hint"><a id="api-link" href="#" target="_blank" rel="noopener">Open this request</a> in a new tab.</p>
           <pre id="json"></pre>
         </details>
       </div>
@@ -337,7 +338,7 @@
     async function plan(params) {
       const request = ++latestRequest;
       const query = new URLSearchParams(params);
-      document.getElementById("api-link").href = `${API_URL}?${query}`;
+      document.getElementById("api-link").href = `${API_URL}?${query}&format=json`;
       history.replaceState(null, "", `?${query}`);
       const button = form.querySelector("button[type=submit]");
       button.disabled = true;
