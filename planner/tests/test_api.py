@@ -89,3 +89,11 @@ class RoutePlanApiTests(TestCase):
         urlopen.side_effect = URLError("connection refused")
         response = self.client.get(URL, {"start": START, "finish": FINISH})
         self.assertEqual(response.status_code, 502)
+
+
+class TestPageTests(TestCase):
+    def test_page_links_the_api_and_the_docs(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'const API_URL = "/api/route/"')
+        self.assertContains(response, 'href="/api/docs/"')
