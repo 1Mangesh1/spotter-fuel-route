@@ -52,6 +52,18 @@ class GetRouteTests(SimpleTestCase):
         with self.assertRaises(NoRouteFound):
             get_route(CHICAGO, DENVER)
 
+    @patch("planner.routing.urlopen")
+    def test_point_far_from_any_road(self, urlopen):
+        urlopen.side_effect = http_error(400, "NoSegment")
+        with self.assertRaises(NoRouteFound):
+            get_route(CHICAGO, DENVER)
+
+    @patch("planner.routing.urlopen")
+    def test_response_without_geometry(self, urlopen):
+        urlopen.return_value = io.BytesIO(json.dumps({"code": "Ok", "routes": [{}]}).encode())
+        with self.assertRaisesMessage(RoutingError, "cannot read"):
+            get_route(CHICAGO, DENVER)
+
     @patch("planner.routing.urlopen", side_effect=URLError("connection refused"))
     def test_service_down(self, urlopen):
         with self.assertRaisesMessage(RoutingError, "routing service"):

@@ -41,9 +41,9 @@ class TripQuerySerializer(serializers.Serializer):
         default=Strategy.CHEAPEST.value,
         help_text=(
             "cheapest: the lowest fuel cost, which can mean several small top-ups. "
-            f"balanced: counts each stop as ${BALANCED_STOP_COST:g} of driver time, so it makes "
-            "far fewer stops for a little more fuel cost. fewest_stops: the minimum number of "
-            "stops, and the cheapest plan among those."
+            f"balanced: counts each stop as ${BALANCED_STOP_COST:g} of driver time, so it usually "
+            "makes far fewer stops for a little more fuel cost. fewest_stops: the minimum number "
+            "of stops, with a low fuel cost among those plans."
         ),
     )
 
@@ -64,6 +64,13 @@ class TripQuerySerializer(serializers.Serializer):
 
     def validate_strategy(self, value):
         return Strategy(value)
+
+    def validate(self, data):
+        if data["start"].point == data["finish"].point:
+            raise serializers.ValidationError(
+                {"finish": "The finish is the same place as the start."}
+            )
+        return data
 
 
 class LocationSerializer(serializers.Serializer):

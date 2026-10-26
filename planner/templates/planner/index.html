@@ -242,6 +242,16 @@
       return Object.entries(body).map(([field, messages]) => `${field}: ${[].concat(messages).join(" ")}`).join(" ");
     }
 
+    // Station names come from data, so they are set as text, never as HTML.
+    function popup(stop, n) {
+      const box = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = `${n}. ${stop.name}`;
+      box.append(title, document.createElement("br"), `${stop.city}, ${stop.state}`,
+        document.createElement("br"), `${number(stop.gallons, 2)} gal at ${fuelPrice(stop.price_per_gallon)}`);
+      return box;
+    }
+
     function stopItem(stop, n) {
       const li = document.createElement("li");
       li.innerHTML = `<span class="badge">${n}</span><span class="stop-name"></span><span class="stop-cost"></span><span class="stop-meta"></span>`;
@@ -272,7 +282,7 @@
       L.marker([data.finish.lat, data.finish.lon], { icon: pin("B", "end"), title: data.finish.label }).addTo(layers);
       data.fuel_stops.forEach((stop, i) => {
         L.marker([stop.lat, stop.lon], { icon: pin(i + 1, "fuel"), title: stop.name })
-          .bindPopup(`<strong>${i + 1}. ${stop.name}</strong><br>${stop.city}, ${stop.state}<br>${number(stop.gallons, 2)} gal at ${fuelPrice(stop.price_per_gallon)}`)
+          .bindPopup(popup(stop, i + 1))
           .addTo(layers);
       });
       map.fitBounds(line.getBounds(), { padding: [30, 30] });
@@ -287,14 +297,17 @@
 
     async function fetchPlan(params) {
       const response = await fetch(`${API_URL}?${new URLSearchParams(params)}`, { headers: { Accept: "application/json" } });
-      return { ok: response.ok, body: await response.json() };
+      const body = await response.json().catch(() => ({ detail: `The server returned HTTP ${response.status}.` }));
+      return { ok: response.ok, body };
     }
 
     // The route is cached on the server, so these calls do not call the routing API again.
     async function compare(params, current) {
       const request = latestRequest;
       const results = await Promise.all(STRATEGIES.map(([value]) =>
-        value === current.strategy ? { ok: true, body: current } : fetchPlan({ ...params, strategy: value })
+        value === current.strategy
+          ? { ok: true, body: current }
+          : fetchPlan({ ...params, strategy: value }).catch(() => ({ ok: false, body: {} }))
       ));
       if (request !== latestRequest) return;
       const list = document.getElementById("compare");

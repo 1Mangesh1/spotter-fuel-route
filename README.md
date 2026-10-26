@@ -2,7 +2,7 @@
 
 A Django API that plans a truck trip between two places in the USA. It returns the route, the fuel stops to make, and the total fuel cost. The truck has a 500-mile range and uses 1 gallon every 10 miles. Fuel prices come from the Spotter price list in `planner/data/fuel_prices.csv`.
 
-A new start and finish pair makes one call to the routing API. A repeated pair makes none, because the server caches the route.
+A new start and finish pair makes one call to the routing API. A repeated pair makes none, because each server process keeps its routes in memory for 24 hours.
 
 ## Run it
 
@@ -45,8 +45,8 @@ Then open these pages:
 `strategy` decides what "optimal" means:
 
 - `cheapest`: the lowest fuel cost. This plan is exact. On a long trip, it can make small top-ups where prices rise ahead.
-- `balanced`: each stop also counts as $5 of driver time. The plan makes far fewer stops for a little more fuel cost.
-- `fewest_stops`: the smallest number of stops, and the cheapest plan with that many stops.
+- `balanced`: each stop also counts as $5 of driver time. The plan aims for the lowest fuel cost plus stop cost, so it usually makes far fewer stops for a little more fuel cost.
+- `fewest_stops`: the smallest number of stops. Among plans with that many stops, it picks a low-cost one.
 
 Example: `GET /api/route/?start=Chicago, IL&finish=Denver, CO&strategy=balanced` (shortened):
 
@@ -77,18 +77,18 @@ Example: `GET /api/route/?start=Chicago, IL&finish=Denver, CO&strategy=balanced`
 | Status | When |
 |---|---|
 | 200 | The plan is ready. |
-| 400 | A parameter is missing, a place is not in the USA, or a value is not allowed. The body names the field. |
+| 400 | A parameter is missing, a place is not in the USA, the start and finish are the same place, or a value is not allowed. The body names the field. |
 | 422 | No road connects the places, or the stations cannot cover the trip with a 500-mile range. |
 | 502 | The routing service failed or did not answer. |
 
 ## How it works
 
 1. **Places, with no API call.** `planner/places.py` reads `planner/data/us_places.csv`, which holds about 46,000 US places from the Census Gazetteer files. The lookup takes "City, ST" or "City, State", and it uses a lat,lon pair as given.
-2. **One routing call.** `planner/routing.py` asks the public [OSRM](https://project-osrm.org/) server for the route as GeoJSON. The server caches each route for 24 hours.
+2. **One routing call.** `planner/routing.py` asks the public [OSRM](https://project-osrm.org/) server for the route as GeoJSON. Each server process caches the route in memory for 24 hours.
 3. **Stations near the route.** The price list has no coordinates. `import_stations` places each station at the Census point of its city and stores it in SQLite. At request time, `planner/stations.py` keeps the stations within 10 miles of the route. A grid of 0.5-degree cells means that each route point checks only the stations near it.
 4. **The fuel plan.** `planner/optimizer.py` holds all three strategies.
    - `cheapest` is a greedy rule that is exact for a single route. At each station, the truck buys just enough fuel to reach the next cheaper station in range. If no station in range is cheaper, it fills the tank and drives to the cheapest station in range.
-   - `balanced` and `fewest_stops` first choose the stations to stop at, with a shortest-path search over the stations in route order. The greedy rule then sets the amount to buy at each chosen station.
+   - `balanced` and `fewest_stops` first choose the stations to stop at, with a shortest-path search over the stations in route order. The greedy rule then sets the amount to buy at each chosen station. If the exact cheapest plan does at least as well on the strategy's own measure, the API returns that plan instead.
 
 ## Speed
 
@@ -112,8 +112,12 @@ Results for New York, NY to Los Angeles, CA (2,806 miles) with an empty tank:
 - A station's position is the center of its city. The plan does not add the short detour from the highway to the station.
 - The price list repeats some stations with different prices, one row per supply rack. The import keeps the lowest price for each station.
 - The import places 6,431 of the 6,738 stations. It skips 112 stations in Canada and 195 in small US communities that no Census file lists. The import prints their names.
-- `balanced` and `fewest_stops` choose their stops with an estimate that assumes each stop buys just enough to reach the next one. The amounts at the chosen stops are then exact. Only `cheapest` is exact end to end.
-- The public OSRM server is a demo service. For production, set `OSRM_BASE_URL` to your own OSRM server.
+- `balanced` and `fewest_stops` choose their stops with a fast estimate. `fewest_stops` always finds the smallest number of stops. Neither one is ever worse than `cheapest` on its own measure. In rare cases, the plan costs a few dollars more than the best possible plan. Only `cheapest` is exact end to end. An exact search for these two strategies is possible, but in Python it takes seconds per request instead of milliseconds.
+- With an empty tank, the first purchase also pays for the few miles from the start to the first station. So that one purchase can be a little more than the 50-gallon tank.
+- A lat,lon pair must fall inside a rough box around the USA. The box rejects points on other continents, but not every point in Canada or Mexico.
+- Each server process loads the stations once. Restart the server after you run `import_stations` again.
+- The public OSRM server is a demo service. For production, set `OSRM_BASE_URL` to your own OSRM server, and use a shared cache such as Redis.
+- `DEBUG` is on by default so that the local steps above work. For production, set `DJANGO_DEBUG=0`, `DJANGO_SECRET_KEY` and `DJANGO_ALLOWED_HOSTS`.
 
 ## Tests
 

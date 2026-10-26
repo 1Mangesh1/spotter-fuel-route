@@ -8,7 +8,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 # The fallback key is for local runs only. Set DJANGO_SECRET_KEY anywhere else.
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "local-dev-only-not-secret" if DEBUG else "")
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -86,7 +90,7 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Fuel Route Planner API",
     "DESCRIPTION": (
-        "Plans a truck route between two US locations and picks the cheapest fuel stops "
+        "Plans a truck route between two US locations and its fuel stops "
         "for a 500-mile range at 10 miles per gallon."
     ),
     "VERSION": "1.0.0",

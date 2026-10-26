@@ -8,7 +8,7 @@ station in range.
 
 import math
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
 
 MAX_RANGE_MILES = 500
@@ -46,7 +46,7 @@ class Purchase[T]:
 
 @dataclass(frozen=True)
 class FuelPlan[T]:
-    purchases: list[Purchase[T]] = field(default_factory=list)
+    purchases: list[Purchase[T]]
 
     @property
     def total_gallons(self) -> float:
@@ -156,7 +156,9 @@ def plan_with_strategy[T](
     """Plan the fuel stops for one strategy.
 
     CHEAPEST gives the exact lowest fuel cost. BALANCED and FEWEST_STOPS first choose the
-    stations to stop at, and then buy at those stations with the same exact rule.
+    stations to stop at, and then buy at those stations with the same exact rule. That stop
+    search is an estimate, so the exact cheapest plan wins when it does at least as well on
+    the strategy's own measure.
     """
     options = {
         "start_tank": start_tank,
@@ -164,10 +166,22 @@ def plan_with_strategy[T](
         "mpg": mpg,
         "start_radius_miles": start_radius_miles,
     }
+    candidates = list(candidates)
+    cheapest = plan_fuel(candidates, trip_miles, **options)
     if strategy is Strategy.CHEAPEST:
-        return plan_fuel(candidates, trip_miles, **options)
-    stops = _choose_stops(list(candidates), trip_miles, strategy=strategy, **options)
-    return plan_fuel(stops, trip_miles, **options)
+        return cheapest
+    stops = _choose_stops(candidates, trip_miles, strategy=strategy, **options)
+    chosen = plan_fuel(stops, trip_miles, **options)
+    return min(chosen, cheapest, key=lambda plan: _score(plan, strategy))
+
+
+def _score(plan: FuelPlan, strategy: Strategy) -> tuple[float, ...]:
+    """Lower is better. This is the measure that each strategy minimizes."""
+    if strategy is Strategy.FEWEST_STOPS:
+        return (plan.stop_count, plan.total_cost)
+    if strategy is Strategy.BALANCED:
+        return (plan.total_cost + BALANCED_STOP_COST * plan.stop_count,)
+    return (plan.total_cost,)
 
 
 def _choose_stops[T](
@@ -221,7 +235,7 @@ def _choose_stops[T](
             # A stop must buy fuel. If the spare fuel covers the next leg, the plan that
             # skips this station is already in the search.
             left = trip_miles - here.mile
-            if spare < left <= range_miles:
+            if left <= range_miles and (left > spare or not from_start):
                 done = (stops, cost + here.price * (left - spare) / mpg)
                 if finish is None or rank(done) < rank(finish[0]):
                     finish = (done, i, from_start)

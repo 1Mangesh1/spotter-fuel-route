@@ -48,24 +48,21 @@ class StationIndex:
                 yield from self._cells.get((row + d_row, col + d_col), ())
 
     def along_route(
-        self,
-        points: Sequence[LatLon],
-        cum_miles: Sequence[float],
-        corridor_miles: float = CORRIDOR_MILES,
+        self, points: Sequence[LatLon], cum_miles: Sequence[float]
     ) -> list[Candidate[Station]]:
-        """Stations within `corridor_miles` of the route, at the mile of the closest route point."""
+        """Stations within CORRIDOR_MILES of the route, at the mile of the closest route point."""
         closest: dict[int, tuple[float, float, Station]] = {}
         for i in sample_indices(cum_miles, _SAMPLE_SPACING_MILES):
             for s in self._near(points[i]):
                 offset = haversine_miles(points[i], (s.lat, s.lon))
-                if offset <= corridor_miles and (s.id not in closest or offset < closest[s.id][0]):
+                if offset <= CORRIDOR_MILES and (s.id not in closest or offset < closest[s.id][0]):
                     closest[s.id] = (offset, cum_miles[i], s)
         return [Candidate(mile, s.price, s) for _, mile, s in closest.values()]
 
 
 @cache
 def get_station_index() -> StationIndex:
-    """Load every station once per process. The import command clears this cache."""
+    """Load every station once per server process. Restart the server after an import."""
     rows = FuelStation.objects.values(
         "id", "name", "address", "city", "state", "price", "lat", "lon"
     )

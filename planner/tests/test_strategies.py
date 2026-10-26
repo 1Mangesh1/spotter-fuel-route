@@ -64,7 +64,38 @@ class ExpensiveShortcutTests(SimpleTestCase):
         self.assertEqual(bought(plan), [("Y", 30, 90), ("Z", 20, 60)])
 
 
+class NeverWorseThanCheapestTests(SimpleTestCase):
+    """Cases where the stop search alone picks a worse plan than the exact cheapest one."""
+
+    def test_fewest_stops_takes_the_cheaper_plan_with_the_same_stop_count(self):
+        # The search prefers A+Y ($200). A+X also needs 2 stops and costs $185.
+        stations = [
+            Candidate(mile=0.0, price=3.00, station="A"),
+            Candidate(mile=100.0, price=3.50, station="X"),
+            Candidate(mile=500.0, price=5.00, station="Y"),
+        ]
+        plan = plan_with_strategy(stations, 600, strategy=Strategy.FEWEST_STOPS)
+        self.assertEqual(bought(plan), [("A", 50, 150), ("X", 10, 35)])
+
+    def test_balanced_takes_the_cheapest_plan_when_it_scores_better(self):
+        # The search picks Z alone: $200 + $5 = 205. Y+Z costs $160 + $10 = 170.
+        stations = [
+            Candidate(mile=400.0, price=3.00, station="Y"),
+            Candidate(mile=500.0, price=4.00, station="Z"),
+        ]
+        plan = plan_with_strategy(
+            stations, 1000, strategy=Strategy.BALANCED, start_tank=StartTank.FULL
+        )
+        self.assertEqual(bought(plan), [("Y", 40, 120), ("Z", 10, 40)])
+
+
 class EdgeTests(SimpleTestCase):
+    def test_station_at_the_finish_mile(self):
+        stations = [Candidate(mile=8.0, price=3.00, station="A")]
+        for strategy in Strategy:
+            plan = plan_with_strategy(stations, 8, strategy=strategy)
+            self.assertEqual(bought(plan), [("A", 0.8, 2.4)], strategy)
+
     def test_short_full_tank_trip_needs_no_stop_in_any_strategy(self):
         stations = [Candidate(mile=100.0, price=3.0, station="A")]
         for strategy in Strategy:

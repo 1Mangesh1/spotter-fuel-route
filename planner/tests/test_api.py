@@ -91,6 +91,12 @@ class RoutePlanApiTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("strategy", response.json())
 
+    def test_same_start_and_finish_is_a_bad_request(self, urlopen):
+        response = self.client.get(URL, {"start": "Chicago, IL", "finish": "chicago, illinois"})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("finish", response.json())
+        urlopen.assert_not_called()
+
     def test_unknown_place_is_a_bad_request(self, urlopen):
         response = self.client.get(URL, {"start": "Atlantis, IL", "finish": FINISH})
         self.assertEqual(response.status_code, 400)

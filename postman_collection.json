@@ -4,7 +4,12 @@
     "description": "Requests for GET /api/route/. Set base_url to where the server runs.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "variable": [{ "key": "base_url", "value": "http://127.0.0.1:8000" }],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    }
+  ],
   "item": [
     {
       "name": "Chicago to Denver, empty tank",
@@ -12,11 +17,23 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/route/?start=Chicago, IL&finish=Denver, CO",
-          "host": ["{{base_url}}"],
-          "path": ["api", "route", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "Chicago, IL" },
-            { "key": "finish", "value": "Denver, CO" }
+            {
+              "key": "start",
+              "value": "Chicago, IL"
+            },
+            {
+              "key": "finish",
+              "value": "Denver, CO"
+            }
           ]
         }
       }
@@ -27,12 +44,89 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/route/?start=New York, NY&finish=Los Angeles, CA&start_tank=full",
-          "host": ["{{base_url}}"],
-          "path": ["api", "route", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "New York, NY" },
-            { "key": "finish", "value": "Los Angeles, CA" },
-            { "key": "start_tank", "value": "full" }
+            {
+              "key": "start",
+              "value": "New York, NY"
+            },
+            {
+              "key": "finish",
+              "value": "Los Angeles, CA"
+            },
+            {
+              "key": "start_tank",
+              "value": "full"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "New York to Los Angeles, balanced",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/route/?start=New York, NY&finish=Los Angeles, CA&strategy=balanced",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "route",
+            ""
+          ],
+          "query": [
+            {
+              "key": "start",
+              "value": "New York, NY"
+            },
+            {
+              "key": "finish",
+              "value": "Los Angeles, CA"
+            },
+            {
+              "key": "strategy",
+              "value": "balanced"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "New York to Los Angeles, fewest stops",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/route/?start=New York, NY&finish=Los Angeles, CA&strategy=fewest_stops",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "route",
+            ""
+          ],
+          "query": [
+            {
+              "key": "start",
+              "value": "New York, NY"
+            },
+            {
+              "key": "finish",
+              "value": "Los Angeles, CA"
+            },
+            {
+              "key": "strategy",
+              "value": "fewest_stops"
+            }
           ]
         }
       }
@@ -43,11 +137,23 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/route/?start=47.6062,-122.3321&finish=25.7617,-80.1918",
-          "host": ["{{base_url}}"],
-          "path": ["api", "route", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "47.6062,-122.3321" },
-            { "key": "finish", "value": "25.7617,-80.1918" }
+            {
+              "key": "start",
+              "value": "47.6062,-122.3321"
+            },
+            {
+              "key": "finish",
+              "value": "25.7617,-80.1918"
+            }
           ]
         }
       }
@@ -58,11 +164,23 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/route/?start=Paris, France&finish=Denver, CO",
-          "host": ["{{base_url}}"],
-          "path": ["api", "route", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "Paris, France" },
-            { "key": "finish", "value": "Denver, CO" }
+            {
+              "key": "start",
+              "value": "Paris, France"
+            },
+            {
+              "key": "finish",
+              "value": "Denver, CO"
+            }
           ]
         }
       }

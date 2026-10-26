@@ -12,7 +12,7 @@ from planner.services import plan_trip
 
 class RoutePlanView(APIView):
     @extend_schema(
-        summary="Plan a route with the cheapest fuel stops",
+        summary="Plan a route with fuel stops",
         parameters=[TripQuerySerializer],
         responses={
             200: TripPlanSerializer,

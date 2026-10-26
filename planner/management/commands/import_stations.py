@@ -10,7 +10,6 @@ from django.db import transaction
 
 from planner.models import FuelStation
 from planner.places import lookup_city
-from planner.stations import get_station_index
 
 
 class Command(BaseCommand):
@@ -56,7 +55,6 @@ class Command(BaseCommand):
         with transaction.atomic():
             FuelStation.objects.all().delete()
             FuelStation.objects.bulk_create(stations)
-        get_station_index.cache_clear()
 
         self.stdout.write(
             self.style.SUCCESS(f"Imported {len(stations)} stations from {len(rows)} rows.")

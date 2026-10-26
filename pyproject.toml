@@ -1,7 +1,7 @@
 [project]
 name = "spotter-fuel-route"
 version = "0.1.0"
-description = "Route planner API that picks the cheapest fuel stops for a truck trip across the USA"
+description = "Route planner API that plans the fuel stops for a truck trip across the USA"
 readme = "README.md"
 authors = [
     { name = "Mangesh Bide", email = "mangeshbide123@gmail.com" }
