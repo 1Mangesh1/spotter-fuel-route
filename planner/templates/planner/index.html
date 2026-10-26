@@ -124,6 +124,24 @@
     }
     .pin.fuel { background: var(--amber); color: var(--amber-ink); }
     .pin.end { background: var(--sign); color: var(--sign-ink); }
+    fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+    legend { font-weight: 600; font-size: 0.85rem; padding: 0; margin-bottom: 0.3rem; }
+    .segmented { display: flex; border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+    .segmented label { flex: 1; display: block; font-weight: 500; text-align: center; cursor: pointer; }
+    .segmented input { position: absolute; opacity: 0; pointer-events: none; }
+    .segmented span { display: block; padding: 0.5rem 0.4rem; background: var(--paper); }
+    .segmented label + label span { border-left: 1px solid var(--rule); }
+    .segmented input:checked + span { background: var(--asphalt); color: var(--paper); font-weight: 600; }
+    .segmented input:focus-visible + span { outline: 2px solid var(--sign); outline-offset: -2px; }
+    .compare { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+    .compare button {
+      width: 100%; display: grid; grid-template-columns: 1fr auto auto; gap: 0.75rem; align-items: baseline;
+      padding: 0.5rem 0.65rem; border: 1px solid var(--rule); border-radius: var(--radius);
+      background: none; color: var(--ink); cursor: pointer; text-align: left; font-variant-numeric: tabular-nums;
+    }
+    .compare button[aria-current=true] { border-color: var(--sign); background: color-mix(in oklch, var(--sign) 12%, transparent); }
+    .compare .name { font-weight: 600; }
+    .compare .meta { color: var(--ink-soft); font-size: 0.85rem; }
     @media (max-width: 760px) {
       main { grid-template-columns: 1fr; grid-template-rows: auto 60vh; }
       aside { border-right: 0; border-bottom: 1px solid var(--rule); }
@@ -148,12 +166,23 @@
         <label>Finish
           <input name="finish" required placeholder="Denver, CO" autocomplete="off">
         </label>
-        <label>Start tank
-          <select name="start_tank">
-            <option value="empty">Empty: pay for every gallon of the trip</option>
-            <option value="full">Full: pay only for fuel bought on the way</option>
-          </select>
-        </label>
+        <fieldset>
+          <legend>Start tank</legend>
+          <div class="segmented">
+            <label><input type="radio" name="start_tank" value="empty" checked><span>Empty</span></label>
+            <label><input type="radio" name="start_tank" value="full"><span>Full</span></label>
+          </div>
+          <span class="hint">Empty pays for every gallon of the trip. Full pays only for fuel bought on the way.</span>
+        </fieldset>
+        <fieldset>
+          <legend>Plan</legend>
+          <div class="segmented">
+            <label><input type="radio" name="strategy" value="cheapest" checked><span>Cheapest</span></label>
+            <label><input type="radio" name="strategy" value="balanced"><span>Balanced</span></label>
+            <label><input type="radio" name="strategy" value="fewest_stops"><span>Fewest stops</span></label>
+          </div>
+          <span class="hint">Balanced counts each stop as $5 of driver time, so it stops less for a little more fuel cost.</span>
+        </fieldset>
         <span class="hint">Use "City, ST", "City, State" or "lat,lon". The truck has a 500-mile range at 10 mpg.</span>
         <button type="submit">Plan route</button>
         <div class="examples">Try:
@@ -170,6 +199,8 @@
           <div><dt>Fuel bought</dt><dd id="gallons"></dd></div>
           <div class="total"><dt>Fuel cost</dt><dd id="cost"></dd></div>
         </dl>
+        <h2>Compare plans</h2>
+        <ul class="compare" id="compare" aria-label="The same trip with each plan"></ul>
         <h2>Fuel stops</h2>
         <ol class="stops" id="stops"></ol>
         <details>
@@ -196,6 +227,8 @@
     const layers = L.layerGroup().addTo(map);
 
     const money = (n) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+    // Fuel prices are quoted to a tenth of a cent, for example $3.099.
+    const fuelPrice = (n) => n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 3 });
     const number = (n, digits = 0) => n.toLocaleString("en-US", { maximumFractionDigits: digits });
     const pin = (text, kind) => L.divIcon({ className: "", html: `<div class="pin ${kind}">${text}</div>`, iconSize: [26, 26] });
 
@@ -215,7 +248,7 @@
       li.querySelector(".stop-name").textContent = stop.name;
       li.querySelector(".stop-cost").textContent = money(stop.cost);
       li.querySelector(".stop-meta").textContent =
-        `${stop.city}, ${stop.state} · mile ${number(stop.mile_marker)} · ${number(stop.gallons, 2)} gal at ${money(stop.price_per_gallon)}`;
+        `${stop.city}, ${stop.state} · mile ${number(stop.mile_marker)} · ${number(stop.gallons, 2)} gal at ${fuelPrice(stop.price_per_gallon)}`;
       return li;
     }
 
@@ -239,30 +272,72 @@
       L.marker([data.finish.lat, data.finish.lon], { icon: pin("B", "end"), title: data.finish.label }).addTo(layers);
       data.fuel_stops.forEach((stop, i) => {
         L.marker([stop.lat, stop.lon], { icon: pin(i + 1, "fuel"), title: stop.name })
-          .bindPopup(`<strong>${i + 1}. ${stop.name}</strong><br>${stop.city}, ${stop.state}<br>${number(stop.gallons, 2)} gal at ${money(stop.price_per_gallon)}`)
+          .bindPopup(`<strong>${i + 1}. ${stop.name}</strong><br>${stop.city}, ${stop.state}<br>${number(stop.gallons, 2)} gal at ${fuelPrice(stop.price_per_gallon)}`)
           .addTo(layers);
       });
       map.fitBounds(line.getBounds(), { padding: [30, 30] });
     }
 
+    const STRATEGIES = [
+      ["cheapest", "Cheapest"],
+      ["balanced", "Balanced"],
+      ["fewest_stops", "Fewest stops"],
+    ];
+    let latestRequest = 0;
+
+    async function fetchPlan(params) {
+      const response = await fetch(`${API_URL}?${new URLSearchParams(params)}`, { headers: { Accept: "application/json" } });
+      return { ok: response.ok, body: await response.json() };
+    }
+
+    // The route is cached on the server, so these calls do not call the routing API again.
+    async function compare(params, current) {
+      const request = latestRequest;
+      const results = await Promise.all(STRATEGIES.map(([value]) =>
+        value === current.strategy ? { ok: true, body: current } : fetchPlan({ ...params, strategy: value })
+      ));
+      if (request !== latestRequest) return;
+      const list = document.getElementById("compare");
+      list.replaceChildren(...STRATEGIES.map(([value, label], i) => {
+        const { ok, body } = results[i];
+        const li = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.setAttribute("aria-current", String(value === current.strategy));
+        button.innerHTML = '<span class="name"></span><span class="meta"></span><span class="name"></span>';
+        const [name, stops, cost] = button.children;
+        name.textContent = label;
+        stops.textContent = ok ? `${body.stop_count} ${body.stop_count === 1 ? "stop" : "stops"}` : "not possible";
+        cost.textContent = ok ? money(body.total_fuel_cost) : "";
+        button.disabled = !ok;
+        button.addEventListener("click", () => {
+          form.strategy.value = value;
+          form.requestSubmit();
+        });
+        li.append(button);
+        return li;
+      }));
+    }
+
     async function plan(params) {
+      const request = ++latestRequest;
       const query = new URLSearchParams(params);
-      const url = `${API_URL}?${query}`;
-      document.getElementById("api-link").href = url;
+      document.getElementById("api-link").href = `${API_URL}?${query}`;
       history.replaceState(null, "", `?${query}`);
       const button = form.querySelector("button[type=submit]");
       button.disabled = true;
       setStatus("Planning the route...");
       const started = performance.now();
       try {
-        const response = await fetch(url, { headers: { Accept: "application/json" } });
-        const body = await response.json();
-        if (!response.ok) {
+        const { ok, body } = await fetchPlan(params);
+        if (request !== latestRequest) return;
+        if (!ok) {
           setStatus(errorText(body), true);
           return;
         }
         render(body);
         setStatus(`The API answered in ${Math.round(performance.now() - started)} ms.`);
+        compare(params, body);
       } catch (error) {
         setStatus("The API did not answer. Is the server running?", true);
       } finally {
@@ -288,6 +363,7 @@
       form.start.value = initial.get("start");
       form.finish.value = initial.get("finish");
       form.start_tank.value = initial.get("start_tank") || "empty";
+      form.strategy.value = initial.get("strategy") || "cheapest";
       form.requestSubmit();
     }
   </script>
