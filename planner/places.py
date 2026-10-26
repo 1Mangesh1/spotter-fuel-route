@@ -50,10 +50,10 @@ class Location:
 
 
 def place_key(name: str) -> str:
-    """Normalize a place name so that "St. Louis" and "SAINT LOUIS" match."""
+    """Normalize a place name so that "St. Louis", "SAINT LOUIS" and "Mc Calla"/"McCalla" match."""
     text = re.sub(r"[-/]", " ", name.lower())
     words = re.sub(r"[^a-z0-9 ]", "", text).split()
-    return " ".join(_SHORT_WORDS.get(word, word) for word in words)
+    return "".join(_SHORT_WORDS.get(word, word) for word in words)
 
 
 def state_code(text: str) -> str | None:

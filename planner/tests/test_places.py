@@ -6,17 +6,19 @@ from planner.places import LocationError, place_key, resolve_location
 
 class PlaceKeyTests(SimpleTestCase):
     def test_saint_and_st_match(self):
-        self.assertEqual(place_key("St. Louis"), "st louis")
-        self.assertEqual(place_key("SAINT LOUIS"), "st louis")
+        self.assertEqual(place_key("St. Louis"), place_key("SAINT LOUIS"))
 
     def test_fort_and_mount_are_shortened(self):
-        self.assertEqual(place_key("Fort Worth"), "ft worth")
-        self.assertEqual(place_key("FT. WORTH"), "ft worth")
-        self.assertEqual(place_key("Mount Vernon"), "mt vernon")
+        self.assertEqual(place_key("Fort Worth"), place_key("FT. WORTH"))
+        self.assertEqual(place_key("Mount Vernon"), place_key("Mt Vernon"))
 
-    def test_punctuation_and_spacing(self):
-        self.assertEqual(place_key("  Coeur d'Alene "), "coeur dalene")
-        self.assertEqual(place_key("Winston-Salem"), "winston salem")
+    def test_spaces_and_punctuation_do_not_matter(self):
+        self.assertEqual(place_key("Mc Calla"), place_key("McCalla"))
+        self.assertEqual(place_key("  Coeur d'Alene "), place_key("Coeur dAlene"))
+        self.assertEqual(place_key("Winston-Salem"), place_key("Winston Salem"))
+
+    def test_different_places_stay_different(self):
+        self.assertNotEqual(place_key("Fort Worth"), place_key("Worth"))
 
 
 class CleanPlaceNamesTests(SimpleTestCase):
@@ -37,6 +39,11 @@ class CleanPlaceNamesTests(SimpleTestCase):
             clean_place_names("San Buenaventura (Ventura) city", "25"),
             ["San Buenaventura", "Ventura"],
         )
+
+    def test_county_subdivision_suffixes(self):
+        self.assertEqual(clean_place_names("Mahwah township", ""), ["Mahwah"])
+        self.assertEqual(clean_place_names("Whately town", ""), ["Whately"])
+        self.assertEqual(clean_place_names("Autaugaville CCD", ""), ["Autaugaville"])
 
     def test_hyphenated_city_is_kept_whole(self):
         self.assertEqual(clean_place_names("Winston-Salem city", "25"), ["Winston-Salem"])
