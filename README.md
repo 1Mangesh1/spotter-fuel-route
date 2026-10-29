@@ -112,7 +112,7 @@ Results for New York, NY to Los Angeles, CA (2,806 miles) with an empty tank:
 
 - A station's position is the center of its city. The plan does not add the short detour from the highway to the station.
 - The price list repeats some stations with different prices, one row per supply rack. The import keeps the lowest price for each station.
-- The import places 6,431 of the 6,738 stations. It skips 112 stations in Canada and 195 in small US communities that no Census file lists. The import prints their names.
+- The import places 6,436 of the 6,738 stations. It skips 112 stations in Canada and 190 in small US communities that no Census file lists. The import prints their names.
 - `balanced` and `fewest_stops` choose their stops with a fast estimate. `fewest_stops` always finds the smallest number of stops. Neither one is ever worse than `cheapest` on its own measure. In rare cases, the plan costs a few dollars more than the best possible plan. Only `cheapest` is exact end to end. An exact search for these two strategies is possible, but in Python it takes seconds per request instead of milliseconds.
 - With an empty tank, the first purchase also pays for the few miles from the start to the first station. So that one purchase can be a little more than the 50-gallon tank.
 - A lat,lon pair must fall inside a rough box around the USA. The box rejects points on other continents, but not every point in Canada or Mexico.

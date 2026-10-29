@@ -10,7 +10,9 @@ from django.test import SimpleTestCase
 
 PLACES = """\
 USPS|GEOID|GEOIDFQ|ANSICODE|NAME|LSAD|FUNCSTAT|ALAND|AWATER|ALAND_SQMI|AWATER_SQMI|INTPTLAT|INTPTLONG
+ID|1600001|x|x|Boise City city|25|A|221000000|0|0|0|43.59805|-116.231596
 NJ|3400001|x|x|Fairview borough|21|A|2000|0|0|0|40.81|-73.99
+OK|4000001|x|x|Boise City city|25|A|4000000|0|0|0|36.731336|-102.509522
 """
 COUSUBS = """\
 USPS|GEOID|GEOIDFQ|ANSICODE|NAME|FUNCSTAT|ALAND|AWATER|ALAND_SQMI|AWATER_SQMI|INTPTLAT|INTPTLONG
@@ -48,3 +50,9 @@ class BuildPlacesTests(SimpleTestCase):
 
     def test_skips_township_names_that_repeat_in_a_state(self):
         self.assertNotIn("Franklin", self.build())
+
+    def test_boise_city_is_also_boise_in_idaho_only(self):
+        self.assertEqual(
+            self.build()["Boise"],
+            {"name": "Boise", "state": "ID", "lat": "43.59805", "lon": "-116.231596"},
+        )

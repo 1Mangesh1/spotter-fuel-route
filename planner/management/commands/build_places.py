@@ -26,6 +26,8 @@ _ALTERNATE = re.compile(r"(.+?) \((.+)\)")
 # Consolidated city-county governments, such as "Nashville-Davidson". Their short name
 # ("Nashville") is what people type, so it gets an alias.
 _CONSOLIDATED_LSAD = {"00", "CG", "MG", "UC", "UG"}
+# The Census calls Boise, Idaho "Boise City". Boise City, Oklahoma is the real name there.
+_ALIASES = {("ID", "Boise City"): "Boise"}
 
 type Record = dict[str, str]
 
@@ -51,7 +53,10 @@ def _entries(rows: list[dict[str, str]]):
     """Yield (lookup key, land area, output record) for every usable name in the rows."""
     for row in rows:
         lat, lon = row["INTPTLAT"], row["INTPTLONG"].strip()
-        for name in clean_place_names(row["NAME"].strip(), row.get("LSAD", "")):
+        names = clean_place_names(row["NAME"].strip(), row.get("LSAD", ""))
+        if alias := _ALIASES.get((row["USPS"], names[0])):
+            names.append(alias)
+        for name in names:
             record = {"name": name, "state": row["USPS"], "lat": lat, "lon": lon}
             yield (place_key(name), row["USPS"]), float(row["ALAND"]), record
 

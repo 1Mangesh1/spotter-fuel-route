@@ -59,6 +59,13 @@ class ResolveLocationTests(SimpleTestCase):
     def test_city_and_full_state_name(self):
         self.assertEqual(resolve_location("chicago, illinois"), resolve_location("Chicago, IL"))
 
+    def test_boise_matches_the_census_name_boise_city(self):
+        location = resolve_location("Boise, ID")
+        self.assertEqual(location.label, "Boise, ID")
+        self.assertAlmostEqual(location.lat, 43.598, places=2)
+        self.assertAlmostEqual(location.lon, -116.232, places=2)
+        self.assertEqual(resolve_location("Boise, Idaho"), location)
+
     def test_coordinates(self):
         location = resolve_location("41.8781, -87.6298")
         self.assertEqual((location.lat, location.lon), (41.8781, -87.6298))
